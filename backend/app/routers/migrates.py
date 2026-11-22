@@ -15,9 +15,19 @@ class FinishIn(BaseModel):
     success: bool = True
 
 
+@router.get("/递进规则")
+def rule_book():
+    return svc.rule_book()
+
+
 @router.get("/迁移")
 def list_jobs():
     return svc.list_jobs()
+
+
+@router.get("/迁移审计")
+def list_audit(partition_id: int | None = None):
+    return svc.list_audit(partition_id)
 
 
 @router.post("/迁移")

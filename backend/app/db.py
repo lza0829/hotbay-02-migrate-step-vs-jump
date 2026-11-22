@@ -40,7 +40,24 @@ CREATE TABLE IF NOT EXISTS migrate_jobs (
   created_at TEXT NOT NULL,
   finished_at TEXT,
   note TEXT NOT NULL DEFAULT '',
+  reject_code TEXT NOT NULL DEFAULT '',
+  reject_reason TEXT NOT NULL DEFAULT '',
+  from_prefix TEXT NOT NULL DEFAULT '',
+  to_prefix TEXT NOT NULL DEFAULT '',
+  snapshot_tier TEXT NOT NULL DEFAULT '',
+  snapshot_prefix TEXT NOT NULL DEFAULT '',
   FOREIGN KEY(partition_id) REFERENCES partitions(id)
+);
+CREATE TABLE IF NOT EXISTS migrate_audit (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  job_id INTEGER,
+  partition_id INTEGER NOT NULL,
+  event TEXT NOT NULL,
+  from_tier TEXT NOT NULL DEFAULT '',
+  to_tier TEXT NOT NULL DEFAULT '',
+  reason_code TEXT NOT NULL DEFAULT '',
+  reason TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS retention_policies (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,11 +97,30 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 '''
 
+# 库级单飞：同一分区只允许一张「执行中」迁移单，并发双迁在 INSERT 即被拒绝。
+RUNNING_INDEX = '''
+CREATE UNIQUE INDEX IF NOT EXISTS ux_migrate_running_partition
+  ON migrate_jobs(partition_id) WHERE status='执行中';
+'''
+
+# 旧库补列（首次部署无旧库，此处置幂等兜底）。
+_JOB_ADDED_COLUMNS = (
+    ("reject_code", "TEXT NOT NULL DEFAULT ''"),
+    ("reject_reason", "TEXT NOT NULL DEFAULT ''"),
+    ("from_prefix", "TEXT NOT NULL DEFAULT ''"),
+    ("to_prefix", "TEXT NOT NULL DEFAULT ''"),
+    ("snapshot_tier", "TEXT NOT NULL DEFAULT ''"),
+    ("snapshot_prefix", "TEXT NOT NULL DEFAULT ''"),
+)
+
 
 def connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
+    # WAL 让并发下的单飞索引判定即时可见，配合 busy_timeout 避免瞬时锁错。
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=30000")
     return conn
 
 
@@ -101,6 +137,15 @@ def db():
         conn.close()
 
 
+def _migrate(conn: sqlite3.Connection) -> None:
+    existing = {r["name"] for r in conn.execute("PRAGMA table_info(migrate_jobs)").fetchall()}
+    for name, decl in _JOB_ADDED_COLUMNS:
+        if name not in existing:
+            conn.execute(f"ALTER TABLE migrate_jobs ADD COLUMN {name} {decl}")
+
+
 def init_db() -> None:
     with db() as conn:
         conn.executescript(SCHEMA)
+        _migrate(conn)
+        conn.executescript(RUNNING_INDEX)

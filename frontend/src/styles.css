@@ -140,6 +140,45 @@ th { color: var(--amber); font-weight: 600; }
 .err { color: var(--danger); }
 .muted { color: var(--muted); }
 h2 { font-size: 1.15rem; color: var(--paper); margin: 8px 0 12px; }
+
+/* 温层徽章：热/温/冷全局同一配色，总览、分区册、迁移页、规则页同刷 */
+.badge-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 4px; }
+.tier-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: .85rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.tier-badge code { font-weight: 400; opacity: .85; }
+.tier-hot { background: rgba(255,107,107,.18); color: #ff9b9b; border-color: #7a3535; }
+.tier-warm { background: rgba(226,180,87,.18); color: var(--amber); border-color: var(--amber-dim); }
+.tier-cold { background: rgba(120,170,255,.16); color: #9cc0ff; border-color: #3a4f7a; }
+
+.reason-chip {
+  display: inline-block;
+  font-size: .8rem;
+  color: var(--danger);
+  background: rgba(255,107,107,.08);
+  border: 1px solid #5a2a2a;
+  padding: 3px 7px;
+  margin-top: 3px;
+}
+.reason-chip code { color: #ff9b9b; }
+.cell-allow { background: rgba(125,206,160,.07); }
+.cell-deny { background: rgba(255,107,107,.07); }
+.row-rejected { opacity: .85; }
+.row-rejected td { color: var(--muted); }
+.row-failed td:first-child { box-shadow: inset 3px 0 0 var(--danger); }
+.prefix-cell code { font-size: .8rem; color: var(--muted); word-break: break-all; }
+code {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  background: rgba(255,255,255,.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
 @media (max-width: 720px) {
   .main { padding: 18px 14px 120px; }
   .shell { grid-template-columns: 16px 1fr; }

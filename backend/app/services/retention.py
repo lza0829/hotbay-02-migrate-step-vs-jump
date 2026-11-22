@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import date
 from fastapi import HTTPException
 from app.db import db
-from app.services.core import now, partition_row
+from app.services.core import now
 
 
 def list_policies():

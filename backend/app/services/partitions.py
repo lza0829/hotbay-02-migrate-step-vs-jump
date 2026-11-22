@@ -1,7 +1,7 @@
 from __future__ import annotations
 from fastapi import HTTPException
 from app.db import db
-from app.services.core import now, require_tier, vault_partition_count
+from app.services.core import now, prefix_for_tier, require_tier, vault_partition_count
 
 
 def list_partitions(conn=None):
@@ -23,6 +23,10 @@ def list_partitions(conn=None):
 
 def create_partition(part_key: str, title: str, release_day: str, vault_id: int, tier: str, object_prefix: str, clips: list):
     tier = require_tier(tier)
+    # 目录归属入口约束：登记即落在所声明温层的归属前缀下，后续迁移再整体改前缀。
+    want_prefix = prefix_for_tier(tier)
+    if not object_prefix.startswith(want_prefix):
+        raise HTTPException(400, detail=f"{tier}分区的对象前缀必须以{want_prefix}开头，目录归属须与温层一致")
     with db() as conn:
         v = conn.execute("SELECT * FROM vaults WHERE id=?", (vault_id,)).fetchone()
         if not v or not v["active"]:

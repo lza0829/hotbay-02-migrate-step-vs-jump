@@ -26,10 +26,10 @@ def seed_if_empty() -> None:
         )
         today = date.today()
         rows = [
-            ("P-红海2024-主成片", "红海行动重映成片", str(today - timedelta(days=120)), 1, "热档", "reel/红海/主成片/"),
-            ("P-流浪2025-预告", "流浪地球预告合集", str(today - timedelta(days=20)), 2, "温档", "reel/流浪/预告/"),
-            ("P-哪吒2025-物料", "哪吒宣发物料", str(today - timedelta(days=5)), 2, "热档", "reel/哪吒/物料/"),
-            ("P-封神2023-冷存", "封神第一部冷存", str(today - timedelta(days=400)), 3, "冷档", "reel/封神/冷存/"),
+            ("P-红海2024-主成片", "红海行动重映成片", str(today - timedelta(days=120)), 1, "热档", "hot/红海/主成片/"),
+            ("P-流浪2025-预告", "流浪地球预告合集", str(today - timedelta(days=20)), 2, "温档", "warm/流浪/预告/"),
+            ("P-哪吒2025-物料", "哪吒宣发物料", str(today - timedelta(days=5)), 2, "热档", "hot/哪吒/物料/"),
+            ("P-封神2023-冷存", "封神第一部冷存", str(today - timedelta(days=400)), 3, "冷档", "cold/封神/冷存/"),
         ]
         for key, title, day, vid, tier, prefix in rows:
             cur = conn.execute(
